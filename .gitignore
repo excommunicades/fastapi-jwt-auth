@@ -1,0 +1,60 @@
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# FastAPI application
+*.db
+*.sqlite
+
+# Virtual environments
+venv/
+env/
+.venv/
+.conda/
+*.env
+*.envrc
+
+# Alembic migration files (if you don't want to track migrations in Git)
+alembic/versions/
+
+# SQLAlchemy database files (e.g., SQLite files)
+*.sqlite3
+
+# MySQL and PostgreSQL database files (if any local backups are stored)
+*.sql
+*.bak
+
+# VSCode or IDE-specific files (e.g., Visual Studio Code)
+.vscode/
+.idea/
+
+# Jupyter Notebook files
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Pytest cache
+.cache/
+
+# Coverage reports
+.coverage
+*.cover
+coverage.xml
+*.hypothesis/
+
+# PyInstaller
+*.spec
+dist/
+build/
+
+# Log files
+*.log
+
+# Docker
+docker-compose.override.yml
+*.dockerignore
