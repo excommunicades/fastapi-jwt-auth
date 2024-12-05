@@ -1,10 +1,10 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
 class Register_User(BaseModel):
 
-    nickname: str
+    nickname: str = Field(max_length=30)
 
     email: EmailStr
 

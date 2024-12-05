@@ -7,7 +7,7 @@ router = APIRouter(
 
 
 @router.post('/register')
-def registration():
+def registration(nickname: str, email: str, ):
 
     pass
 
