@@ -73,11 +73,14 @@ class UserManagementRepository:
 
         access_token = self.jwt_repository.create_access_token(data={"sub": user.nickname})
 
+        refresh_token = self.jwt_repository.create_refresh_token(data={"sub": user.nickname})
+
         return JSONResponse(
                     status_code=200,
                     content={
                         "token": {
                                 "access_token": access_token,
+                                "refresh_token": refresh_token,
                                 "token_type": "bearer"
                                 },
                         "user": {
