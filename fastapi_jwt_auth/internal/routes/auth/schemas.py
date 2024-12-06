@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
-class Register_User(BaseModel):
+class RegisterUserSchema(BaseModel):
 
     nickname: str = Field(max_length=30)
 
@@ -10,15 +10,15 @@ class Register_User(BaseModel):
 
     password: str
 
-class Login_User(BaseModel):
+class LoginUserSchema(BaseModel):
 
-    nickname: str
+    nickname: str = Field(max_length=30)
 
     email: EmailStr
 
     password: str
 
 
-class Refresh_Token(BaseModel):
+class RefreshTokenSchema(BaseModel):
 
     refresh_token: str

@@ -6,8 +6,11 @@ from fastapi import Depends, HTTPException, status
 
 from fastapi_jwt_auth.pkg.jwt.jwt_settings import SECRET_KEY, ALGORITHM, oauth2_scheme
 
+from fastapi_jwt_auth.pkg.db.models import User
+
 class JWT_Repository:
 
+    @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta]=None):
 
         to_encode = data.copy()
@@ -25,6 +28,7 @@ class JWT_Repository:
 
         return encoded_jwt
 
+    @staticmethod
     def verify_token(token: str):
 
         try:
@@ -41,7 +45,7 @@ class JWT_Repository:
 
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
-
+    @staticmethod
     def get_current_user(token: str = Depends(oauth2_scheme)):
 
         payload = verify_token(token)

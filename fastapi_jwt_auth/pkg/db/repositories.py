@@ -1,84 +1,57 @@
+import bcrypt
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.pkg.db.models import (
-    Products,
+from fastapi import HTTPException, status
+
+from fastapi_jwt_auth.pkg.db.models import (
+    User,
 )
+from fastapi_jwt_auth.pkg.jwt.repository import JWT_Repository
 
-
-class ProductRepository:
+class UserManagementRepository:
 
     def __init__(self, db: Session):
 
         self.db = db
+        self.jwt_repository = JWT_Repository()
 
-    def create_product(self, title: str, description: str) -> Products:
+    def register(self, nickname: str, email: str, password: str) -> User:
 
-        """Create product logic"""
+        """Create user logic with unique nickname, email, and password encryption"""
 
-        try:
+        if self.db.query(User).filter_by(email=email).first():
 
-            db_product = Products(title=title, description=description)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email already registered')
 
-            self.db.add(db_product)
-            self.db.commit()
-            self.db.refresh(db_product)
+        if self.db.query(User).filter_by(nickname=nickname).first():
 
-            return db_product
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Nickname already registered')
 
-        except SQLAlchemyError as e:
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-            self.db.rollback()
+        new_user = User(nickname=nickname, email=email, password_hash=hashed_password)
 
-            raise Exception("Error creating product") from e
+        self.db.add(new_user)
+        self.db.commit()
 
-    def get_product(self, product_id: int) -> Products:
+        return new_user
+
+    def login(self, nickname: str, password: str) -> User:
 
         """Product returning logic"""
 
-        return self.db.query(Products).filter(Products.id == product_id).first()
+        user = self.db.query(User).filter_by(nickname=nickname).first()
 
+        if not user:
 
-    def get_product_list(self) -> list[Products]:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User does not exist.')
 
-        """Product list returning logic"""
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
 
-        return self.db.query(Products).all()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Wrong password.')
 
-    def update_product(self, product_id: int, title: str = None, description: str = None) -> Products:
+        access_token = self.jwt_repository.create_access_token(data={"sub": user.nickname})
 
-        """Update product logic"""
-
-        db_product = self.db.query(Products).filter(Products.id == product_id).first()
-
-        if db_product:
-
-            if title is not None:
-
-                db_product.title = title
-
-            if description is not None:
-
-                db_product.description = description
-
-            self.db.commit()
-
-            self.db.refresh(db_product)
-
-            return db_product
-
-        return None
-
-    def delete_product(self, product_id: str) -> Products | None:
-
-        db_product = self.db.query(Products).filter(Products.id == product_id).first()
-
-        if db_product:
-
-            self.db.delete(db_product)
-
-            self.db.commit()
-
-            return db_product
-
-        return None
+        return {"access_token": access_token, "token_type": "bearer"}
