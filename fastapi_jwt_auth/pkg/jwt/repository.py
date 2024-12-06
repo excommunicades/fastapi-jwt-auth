@@ -13,6 +13,8 @@ class JWT_Repository:
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta]=None):
 
+        '''Creates access token'''
+
         to_encode = data.copy()
 
         if expires_delta:
@@ -30,6 +32,8 @@ class JWT_Repository:
 
     @staticmethod
     def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
+
+        '''Creates refresh token'''
 
         to_encode = data.copy()
 
@@ -50,6 +54,8 @@ class JWT_Repository:
     @staticmethod
     def verify_token(token: str):
 
+        '''Validate refresh/access tokens'''
+
         try:
 
             payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
@@ -63,17 +69,3 @@ class JWT_Repository:
         except jwt.PyJWKError:
 
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-
-
-    @staticmethod
-    def get_current_user(token: str = Depends(oauth2_scheme)):
-
-        payload = verify_token(token)
-
-        nickname: str = payload.get("sub")
-
-        if nickname is None:
-
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-
-        return User(nickname=nickname)

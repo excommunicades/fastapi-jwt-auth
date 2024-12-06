@@ -36,6 +36,8 @@ def get_user_service(db: Session = Depends(get_db)) -> UserManagementRepository:
 @router.post('/register')
 def registration(User: RegisterUserSchema, userRepository: UserManagementRepository = Depends(get_user_service)):
 
+    '''Endpoint for User registration'''
+
     try:
 
         userRepository.register(nickname=User.nickname, email=User.email, password=User.password)
@@ -57,6 +59,8 @@ def registration(User: RegisterUserSchema, userRepository: UserManagementReposit
 
 @router.post('/login')
 def login(User: LoginUserSchema, userRepository: UserManagementRepository = Depends(get_user_service)):
+
+    '''Endpoint for User loginning'''
 
     try:
 
@@ -90,6 +94,8 @@ def refresh_token(refresh_data: RefreshTokenSchema, jwt_repository: JWT_Reposito
 
 @router.post('/secure-endpoint')
 def secure_endpoint(token: SecureEndpointSchemas, jwt_repository: JWT_Repository = Depends(JWT_Repository)):
+
+    '''Security endpoint for check user's authorization by token'''
 
     check_token(
             repository=jwt_repository,
