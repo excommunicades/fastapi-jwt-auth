@@ -2,20 +2,12 @@ from datetime import timedelta
 from passlib.context import CryptContext
 
 from sqlalchemy.orm import Session
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
-router = APIRouter(
-    prefix='/api/v1',
-    tags=['Identity Management']
-)
-
+from fastapi_jwt_auth.pkg.jwt.repository import JWT_Repository
 from fastapi_jwt_auth.pkg.db.repositories import UserManagementRepository
 from fastapi_jwt_auth.pkg.db.database import get_db
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 from fastapi_jwt_auth.internal.routes.auth.schemas import (
     RegisterUserSchema,
@@ -24,7 +16,18 @@ from fastapi_jwt_auth.internal.routes.auth.schemas import (
     SecureEndpointSchemas
 )
 
-from fastapi_jwt_auth.pkg.jwt.repository import JWT_Repository
+from fastapi_jwt_auth.internal.routes.auth.services import (
+    check_token
+)
+
+
+router = APIRouter(
+    prefix='/api/v1',
+    tags=['Identity Management']
+)
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def get_user_service(db: Session = Depends(get_db)) -> UserManagementRepository:
 
@@ -70,30 +73,11 @@ def login(User: LoginUserSchema, userRepository: UserManagementRepository = Depe
 @router.post('/token')
 def refresh_token(refresh_data: RefreshTokenSchema, jwt_repository: JWT_Repository = Depends(JWT_Repository)):
 
-    try:
-
-        payload = jwt_repository.verify_token(refresh_data.refresh_token)
-
-        nickname = payload.get('sub')
-
-        if not nickname:
-
-            raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail='Invalid refresh token.')
-
-    except HTTPException as e:
-
-        raise e
-
-    except Exception:
-
-        raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail='Invalid refresh token.')
-
     access_token = jwt_repository.create_access_token(
-                                    data={"sub": nickname},
+                                    data={"sub": check_token(
+                                                    repository=jwt_repository,
+                                                    token=refresh_data,
+                                                    token_type='refresh')},
                                     expires_delta=timedelta(minutes=15))
 
     return JSONResponse(
@@ -107,27 +91,10 @@ def refresh_token(refresh_data: RefreshTokenSchema, jwt_repository: JWT_Reposito
 @router.post('/secure-endpoint')
 def secure_endpoint(token: SecureEndpointSchemas, jwt_repository: JWT_Repository = Depends(JWT_Repository)):
 
-    try:
-
-        payload = jwt_repository.verify_token(token.access_token)
-
-        nickname = payload.get('sub')
-
-        if not nickname:
-
-            raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail='Invalid access token.')
-
-    except HTTPException as e:
-
-        raise e
-
-    except Exception:
-
-        raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail='Invalid access token.')
+    check_token(
+            repository=jwt_repository,
+            token=token,
+            token_type='access')
 
     return JSONResponse(
             status_code=status.HTTP_200_OK,
