@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Union
 
 
 class RegisterUserSchema(BaseModel):
@@ -12,11 +12,10 @@ class RegisterUserSchema(BaseModel):
 
 class LoginUserSchema(BaseModel):
 
-    nickname: str = Field(max_length=30)
-
-    email: EmailStr
+    nickname_or_email: Optional[Union[str, EmailStr]]
 
     password: str
+
 
 
 class RefreshTokenSchema(BaseModel):

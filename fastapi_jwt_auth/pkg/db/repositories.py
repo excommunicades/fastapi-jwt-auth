@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 
 from fastapi_jwt_auth.pkg.db.models import (
     User,
@@ -38,20 +39,51 @@ class UserManagementRepository:
 
         return new_user
 
-    def login(self, nickname: str, password: str) -> User:
+    def login(self, nickname_or_email: str, password: str) -> JSONResponse:
 
-        """Product returning logic"""
+        """User login logic"""
 
-        user = self.db.query(User).filter_by(nickname=nickname).first()
+        try:
 
-        if not user:
+            user = self.db.query(User).filter_by(nickname=nickname_or_email).first()
+
+            if not user:
+
+                user = self.db.query(User).filter_by(email=nickname_or_email).first()
+
+
+                if not user: raise HTTPException(detail='User does not exist.')
+
+        except:
 
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User does not exist.')
 
-        if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        
+        if isinstance(user.password_hash, str):
+
+            password_hash_bytes = bytes.fromhex(user.password_hash[2:])
+
+        else:
+
+            password_hash_bytes = user.password_hash
+
+        if not bcrypt.checkpw(password.encode('utf-8'), password_hash_bytes):
 
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Wrong password.')
 
         access_token = self.jwt_repository.create_access_token(data={"sub": user.nickname})
 
-        return {"access_token": access_token, "token_type": "bearer"}
+        return JSONResponse(
+                    status_code=200,
+                    content={
+                        "token": {
+                                "access_token": access_token,
+                                "token_type": "bearer"
+                                },
+                        "user": {
+                            "id": user.id,
+                            "nickname": user.nickname,
+                            "email": user.email
+                            }
+                        }
+                    )

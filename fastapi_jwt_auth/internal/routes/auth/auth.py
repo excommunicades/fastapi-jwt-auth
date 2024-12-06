@@ -13,23 +13,24 @@ router = APIRouter(
 from fastapi_jwt_auth.pkg.db.repositories import UserManagementRepository
 from fastapi_jwt_auth.pkg.db.database import get_db
 
-def get_product_service(db: Session = Depends(get_db)) -> UserManagementRepository:
-
-    return UserManagementRepository(db)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 from fastapi_jwt_auth.internal.routes.auth.schemas import (
-    RegisterUserSchema
+    RegisterUserSchema,
+    LoginUserSchema
 )
 
+def get_user_service(db: Session = Depends(get_db)) -> UserManagementRepository:
+
+    return UserManagementRepository(db)
 
 @router.post('/register')
-def registration(User: RegisterUserSchema, userRepository: UserManagementRepository = Depends(get_product_service)):
+def registration(User: RegisterUserSchema, userRepository: UserManagementRepository = Depends(get_user_service)):
 
     try:
 
-        new_user = userRepository.register(nickname=User.nickname, email=User.email, password=User.password)
+        userRepository.register(nickname=User.nickname, email=User.email, password=User.password)
 
         return JSONResponse(
                     status_code=201,
@@ -46,9 +47,24 @@ def registration(User: RegisterUserSchema, userRepository: UserManagementReposit
                     })
 
 @router.post('/login')
-def login():
+def login(User: LoginUserSchema, userRepository: UserManagementRepository = Depends(get_user_service)):
 
-    pass
+    try:
+
+        return userRepository.login(nickname_or_email=User.nickname_or_email, password=User.password)
+
+    except HTTPException as e:
+
+        return JSONResponse(
+                    status_code=e.status_code,
+                    content={
+                        "error": e.detail
+                    })
+
+
+
+
+
 
 @router.post('/token')
 def refresh_token():
